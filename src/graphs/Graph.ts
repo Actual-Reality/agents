@@ -1378,7 +1378,7 @@ export class StandardGraph extends Graph<t.BaseGraphState, t.GraphNode> {
     }
 
     // Secondary dispatch: custom event for LangGraph callback chain
-    // (tracing, Langfuse, external consumers).  May be silently dropped
+    // (tracing, external consumers).  May be silently dropped
     // in some scenarios (stale run ID, subgraph callback propagation issues),
     // but the primary dispatch above guarantees the event reaches the handler.
     // The customEventCallback in run.ts skips events already dispatched above
