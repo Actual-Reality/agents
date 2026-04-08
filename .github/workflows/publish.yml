@@ -1,45 +1,35 @@
 name: Publish Package
-
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-
 permissions:
-  id-token: write  # Required for OIDC trusted publishing
+  id-token: write # Required for OIDC trusted publishing
   contents: read
-
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: publish  # Must match npm trusted publisher config
+    environment: publish # Must match npm trusted publisher config
     steps:
       - uses: actions/checkout@v4
-
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
-
       - name: Update npm for OIDC support
-        run: npm install -g npm@latest  # Must be 11.5.1+ for provenance
-
+        run: npm install -g npm@latest # Must be 11.5.1+ for provenance
       - name: Install dependencies
         run: npm ci
-
       - name: ESLint
         run: npx eslint "src/**/*.ts"
-
       - name: TypeScript type-check
         run: npx tsc --noEmit
-
       - name: Build
         run: npm run build
         env:
           NODE_ENV: production
-
       - name: Run tests
         run: npx jest --testPathIgnorePatterns=title.memory-leak.test.ts --testPathIgnorePatterns=llm.spec.ts --testPathIgnorePatterns=integration.test.ts
         env:
@@ -56,7 +46,6 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
           BEDROCK_AWS_ACCESS_KEY_ID: ${{ secrets.BEDROCK_AWS_ACCESS_KEY_ID }}
           BEDROCK_AWS_SECRET_ACCESS_KEY: ${{ secrets.BEDROCK_AWS_SECRET_ACCESS_KEY }}
-          
       - name: Check for Google LLM changes
         id: google_changes
         run: |
@@ -73,7 +62,6 @@ jobs:
           else
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
-
       - name: Run Google LLM tests (flaky - timeouts allowed)
         if: steps.google_changes.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         continue-on-error: true
@@ -81,7 +69,6 @@ jobs:
         env:
           NODE_ENV: test
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-
       - name: Check for Anthropic LLM changes
         id: anthropic_changes
         run: |
@@ -97,7 +84,6 @@ jobs:
           else
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
-
       - name: Run Anthropic LLM tests (flaky - timeouts allowed)
         if: steps.anthropic_changes.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         continue-on-error: true
@@ -105,7 +91,6 @@ jobs:
         env:
           NODE_ENV: test
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-
       - name: Check for PTC changes
         id: ptc_changes
         run: |
@@ -121,7 +106,6 @@ jobs:
           else
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
-
       - name: Run PTC unit tests
         if: steps.ptc_changes.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         run: npx jest src/tools/__tests__/ProgrammaticToolCalling.test.ts
@@ -129,7 +113,6 @@ jobs:
           NODE_ENV: test
           LIBRECHAT_CODE_API_KEY: ${{ secrets.LIBRECHAT_CODE_API_KEY }}
           LIBRECHAT_CODE_BASEURL: ${{ secrets.LIBRECHAT_CODE_BASEURL }}
-
       - name: Run PTC integration tests (manual dispatch only)
         if: github.event_name == 'workflow_dispatch'
         run: npx jest src/tools/__tests__/ProgrammaticToolCalling.integration.test.ts
@@ -137,7 +120,6 @@ jobs:
           NODE_ENV: test
           LIBRECHAT_CODE_API_KEY: ${{ secrets.LIBRECHAT_CODE_API_KEY }}
           LIBRECHAT_CODE_BASEURL: ${{ secrets.LIBRECHAT_CODE_BASEURL }}
-
       - name: Check for Tool Search changes
         id: tool_search_changes
         run: |
@@ -153,7 +135,6 @@ jobs:
           else
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
-
       - name: Run Tool Search unit tests
         if: steps.tool_search_changes.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         run: npx jest src/tools/__tests__/ToolSearch.test.ts
@@ -161,7 +142,6 @@ jobs:
           NODE_ENV: test
           LIBRECHAT_CODE_API_KEY: ${{ secrets.LIBRECHAT_CODE_API_KEY }}
           LIBRECHAT_CODE_BASEURL: ${{ secrets.LIBRECHAT_CODE_BASEURL }}
-
       - name: Run Tool Search integration tests (manual dispatch only)
         if: github.event_name == 'workflow_dispatch'
         run: npx jest src/tools/__tests__/ToolSearch.integration.test.ts
@@ -169,10 +149,8 @@ jobs:
           NODE_ENV: test
           LIBRECHAT_CODE_API_KEY: ${{ secrets.LIBRECHAT_CODE_API_KEY }}
           LIBRECHAT_CODE_BASEURL: ${{ secrets.LIBRECHAT_CODE_BASEURL }}
-
       - name: Prune development dependencies
         run: npm prune --production
-
       - name: Check version change
         id: check
         run: |
@@ -185,13 +163,12 @@ jobs:
             echo "Version changed, proceeding with publish"
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
-
       - name: Pack package
         if: steps.check.outputs.skip != 'true'
         run: npm pack
-
       - name: Publish
         if: steps.check.outputs.skip != 'true'
         run: npm publish $(ls librechat-agents-*.tgz) --access public --provenance
         env:
           NODE_ENV: production
+    timeout-minutes: 15
