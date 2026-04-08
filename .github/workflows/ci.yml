@@ -15,6 +15,7 @@ permissions:
 jobs:
   install:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -36,6 +37,7 @@ jobs:
   lint:
     needs: install
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -55,6 +57,7 @@ jobs:
   typecheck:
     needs: install
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -74,6 +77,7 @@ jobs:
   test:
     needs: install
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
